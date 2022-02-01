@@ -15,5 +15,5 @@ app.use((ctx) => {
   ctx.response = "Hello world!";
 });
 
-app.listen(1965);
+app.listen({ port: 1965 });
 ```

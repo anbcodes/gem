@@ -1,0 +1,6 @@
+# Testing serving directory
+
+Hello world!
+
+=> /look.gmi look at this link!
+=> /test look a subdir
