@@ -9,7 +9,7 @@ export class GemResponse {
         return new GemResponse(err.status, err.expose ? err.message : undefined);
     }
 
-    public sendTo(conn: Deno.Conn) {
+    public toUint8Array() {
         this.validate();
         const header = new TextEncoder().encode(`${this.status} ${this.meta}\r\n`);
         let response = header;
@@ -20,8 +20,7 @@ export class GemResponse {
             response.set(body, header.byteLength);
         }
 
-        conn.write(response);
-        conn.close();
+        return response;
     }
 
     public validate() {

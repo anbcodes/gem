@@ -14,13 +14,13 @@ export class GemRequest {
         }
     }
 
-    public static async fromConnection(conn: Deno.Conn) {
+    public static async fromReader(reader: Deno.Reader) {
         const buf = new Uint8Array(1026);
         const req = new Uint8Array(1026);
 
         let off = 0;
         while (true) {
-            const readLen = await conn.read(buf);
+            const readLen = await reader.read(buf);
             if (readLen === null) {
                 throw new Error('Client prematurely closed the connection');
             }

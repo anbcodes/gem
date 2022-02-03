@@ -1,6 +1,6 @@
 import { GemContext } from './context.ts';
 
-export type GemMiddleware = (ctx: GemContext, next: () => Promise<unknown>) => void | Promise<unknown>;
+export type GemMiddleware = (ctx: GemContext, next: () => Promise<unknown>) => unknown | Promise<unknown>;
 
 /** Compose multiple middleware functions into a single middleware function. */
 export function compose(

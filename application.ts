@@ -21,10 +21,27 @@ export interface ListenOptionsTls extends Deno.ListenTlsOptions {
 
 export type ListenOptions = ListenOptionsTls | ListenOptionsBase;
 
+function defaultGetSocket(opts: ListenOptions) {
+    let socket: Deno.Listener;
+    if (opts.secure) {
+        socket = Deno.listenTls(opts);
+    } else {
+        socket = Deno.listen(opts);
+    }
+
+    return socket;
+}
+
+export type GetSocketFunction = typeof defaultGetSocket;
+
 export class GemApplication {
     private socket: Deno.Listener | undefined;
     private middleware: GemMiddleware[] = [];
-    private handling: Promise<void>[] = [];
+    private closed = false;
+
+    constructor(private getSocket = defaultGetSocket) {
+
+    }
 
     use(func: GemMiddleware) {
         this.middleware.push(func);
@@ -56,24 +73,22 @@ export class GemApplication {
             options = { hostname, port: parseInt(portStr, 10) };
         }
 
-        if (options.secure) {
-            this.socket = Deno.listenTls(options);
-        } else {
-            this.socket = Deno.listen(options);
-        }
+        this.socket = this.getSocket(options);
 
         try {
             while (true) {
                 const conn = await this.socket.accept();
                 this.handleRequest(conn).catch(e => {
                     if (e instanceof GemError) {
-                        GemResponse.fromError(e).sendTo(conn);
+                        conn.write(GemResponse.fromError(e).toUint8Array());
+                        conn.close();
                     } else {
                         const message = e instanceof Error
                             ? e.message
                             : "Application Error";
                         console.error('Error: ', message);
-                        GemResponse.fromError(new GemError(40)).sendTo(conn);
+                        conn.write(GemResponse.fromError(new GemError(40)).toUint8Array());
+                        conn.close();
                     }
                 });
             }
@@ -81,17 +96,35 @@ export class GemApplication {
             const message = error instanceof Error
                 ? error.message
                 : "Application Error";
-            console.error('Error: ', message);
+            if (!(message === 'Listener has been closed' && this.closed)) {
+                console.error('Error: ', message);
+            }
         }
     }
 
-    async handleRequest(conn: Deno.Conn) {
-        const request = await GemRequest.fromConnection(conn);
+    public async handle(url: string): Promise<Uint8Array> {
+        const request = new GemRequest(url);
+        return await this.executeRequest(request);
+    }
+
+    public close() {
+        this.closed = true;
+        this.socket?.close();
+    }
+
+    async executeRequest(request: GemRequest): Promise<Uint8Array> {
         const response = new GemResponse();
         const context = new GemContext(request, response);
 
         await compose(this.middleware)(context);
 
-        context.response.sendTo(conn);
+        return context.response.toUint8Array();
+    }
+
+    async handleRequest(conn: Deno.Conn) {
+        const request = await GemRequest.fromReader(conn);
+        const response = await this.executeRequest(request);
+        conn.write(response);
+        conn.close();
     }
 }
