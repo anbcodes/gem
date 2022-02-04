@@ -106,6 +106,11 @@ export class GemApplication {
                         conn.write(GemResponse.fromError(new GemError(40)).toUint8Array());
                         conn.close();
                     }
+                }).catch(e => {
+                    const message = e instanceof Error
+                        ? e.message
+                        : "Application Error";
+                    console.error('Error: ', message);
                 });
             }
         } catch (error) {
