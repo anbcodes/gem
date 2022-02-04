@@ -8,6 +8,8 @@ export interface GemRouterOptions {
      * 
      * @example
      * ```ts
+     * import { GemRouter } from 'https://deno.land/x/gem/mod.ts';
+     * 
      * const router = new GemRouter({ urlPrefix: 'gemini://localhost' });
      * 
      * router.on('/user/:id', (ctx) => console.log(ctx.params.id)) // Matches gemini://localhost/user/[id]

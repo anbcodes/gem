@@ -4,7 +4,7 @@ import { GemContext } from './context.ts';
 
 import { GemError } from './error.ts';
 
-import { assert, assertEquals, readAll } from './test_deps.ts';
+import { assert, assertEquals, readAll, assertRejects } from './test_deps.ts';
 
 const TEST_PORT = 8001;
 
@@ -42,7 +42,7 @@ test('register middleware', async () => {
     await listen;
 });
 
-test('register middleware - accepts non void', async () => {
+test('register middleware - accepts non void', () => {
     const app = new GemApplication();
     app.use((context) => 1);
 });
@@ -228,3 +228,9 @@ test('uncaught generic errors provide a 40 response', async () => {
 
     await listen;
 });
+
+test('throws on no middleware', async () => {
+    const app = new GemApplication();
+
+    await assertRejects(() => app.listen(`:${TEST_PORT}`), TypeError);
+})

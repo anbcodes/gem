@@ -7,12 +7,12 @@ middleware. Similar to [oak](https://github.com/oakserver/oak) or
 Example
 
 ```ts
-import { GemApplication } from "deno.land/x/gem/mod.ts";
+import { GemApplication } from "https://deno.land/x/gem/mod.ts";
 
 const app = new GemApplication();
 
 app.use((ctx) => {
-  ctx.response = "Hello world!";
+  ctx.response.body = "Hello world!";
 });
 
 app.listen({ port: 1965 });
