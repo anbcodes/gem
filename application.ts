@@ -13,7 +13,7 @@ export interface ListenOptionsBase extends Deno.ListenOptions {
      * Determins whether the application listens on SSL or TCP
      * @default true
      */
-    secure?: false;
+    secure: false;
     signal?: AbortSignal;
 }
 
@@ -23,7 +23,7 @@ export interface ListenOptionsTls extends Deno.ListenTlsOptions {
      * Determins whether the application listens on SSL or TCP
      * @default true
      */
-    secure: true;
+    secure: true | undefined;
     signal?: AbortSignal;
 }
 
@@ -31,10 +31,10 @@ export type ListenOptions = ListenOptionsTls | ListenOptionsBase;
 
 function defaultGetSocket(opts: ListenOptions) {
     let socket: Deno.Listener;
-    if (opts.secure) {
-        socket = Deno.listenTls(opts);
-    } else {
+    if (opts.secure === false) {
         socket = Deno.listen(opts);
+    } else {
+        socket = Deno.listenTls(opts);
     }
 
     return socket;
@@ -66,14 +66,31 @@ export class GemApplication {
    * import { GemApplication } from 'https://deno.land/x/gem/mod.ts';
    * 
    * const app = new GemApplication();
+   * 
+   * app.listen(':1965')
    * ```
    * */
     async listen(addr: string): Promise<void>;
     /** Start listening for requests, processing registered middleware on each
-   * request.  If the options `.secure` is undefined or `true`, the listening
-   * will be over ssl and a `.certFile` and a `.keyFile` property need to be supplied. 
-   * If the options `.secure` property is `false`, requests
-   * will be processed over raw TCP. */
+   * request.  If the options `.secure` is undefined or `false`, the listening
+   * will be over raw TCP.  If the options `.secure` property is `true`, a
+   * `.certFile` and a `.keyFile` property need to be supplied and requests
+   * will be processed over TLS.
+   * 
+   * @param options the options to use to listen
+   * 
+   * @example
+   * ```ts
+   * import { GemApplication } from 'https://deno.land/x/gem/mod.ts';
+   * 
+   * const app = new GemApplication();
+   * 
+   * app.listen({
+   *    port: 1965,
+   *    secure: false,
+   * })
+   * ```
+   * */
     async listen(options: ListenOptions): Promise<void>;
     async listen(options: string | ListenOptions): Promise<void> {
         if (!this.middleware.length) {
@@ -86,7 +103,7 @@ export class GemApplication {
                 throw TypeError(`Invalid address passed: "${options}"`);
             }
             const [, hostname, portStr] = match;
-            options = { hostname, port: parseInt(portStr, 10) };
+            options = { hostname, port: parseInt(portStr, 10), secure: false };
         }
 
         this.socket = defaultGetSocket(options);

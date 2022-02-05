@@ -33,7 +33,7 @@ export class GemRequest {
             off += readLen;
 
             if (req[off - 1] === NEW_LINE && req[off - 2] === CARRAGE_RETURN) {
-                const raw = new TextDecoder().decode(req.slice(0, off));
+                const raw = new TextDecoder().decode(req.slice(0, off - 2));
                 return new GemRequest(raw);
             }
         }
